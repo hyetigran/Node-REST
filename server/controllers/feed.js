@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { validationResult } = require("express-validator/check");
+const io = require("../socket");
 const Post = require("./models/post");
 const User = require("../models/user");
 
@@ -14,6 +15,7 @@ exports.getPosts = (req, res, next) => {
     .then(count => {
       totalItems = count;
       return Post.find()
+        .populate("creator")
         .skip((currentPage - 1) * perPage)
         .limit(perPage);
     })
@@ -66,6 +68,7 @@ exports.createPost = (req, res, next) => {
       return user.save();
     })
     .then(result => {
+      io.getIO().emit("posts"), { action: "create", post: post };
       res.status(201).json({
         message: "Post created successfully!",
         post: post,
